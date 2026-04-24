@@ -1,8 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, FileText, Briefcase, MessageSquareText, TrendingUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import {
+  ArrowRight,
+  FileText,
+  Briefcase,
+  MessageSquareText,
+  TrendingUp,
+  Shield,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -19,8 +30,36 @@ export const Route = createFileRoute("/dashboard")({
 });
 
 function Dashboard() {
-  const { user } = useAuth();
+  const { user, isAdmin, refreshRoles } = useAuth();
   const name = user?.user_metadata?.display_name || user?.email?.split("@")[0];
+  const [showClaim, setShowClaim] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+
+  useEffect(() => {
+    if (isAdmin) {
+      setShowClaim(false);
+      return;
+    }
+    supabase.rpc("admin_exists").then(({ data }) => setShowClaim(!data));
+  }, [isAdmin]);
+
+  const handleClaim = async () => {
+    setClaiming(true);
+    const { data, error } = await supabase.rpc("claim_first_admin");
+    setClaiming(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (data) {
+      toast.success("You're now an admin!");
+      await refreshRoles();
+      setShowClaim(false);
+    } else {
+      toast.info("An admin already exists.");
+      setShowClaim(false);
+    }
+  };
 
   const tiles = [
     {
@@ -57,6 +96,32 @@ function Dashboard() {
           Here's your placement readiness hub. Start by uploading a resume.
         </p>
       </div>
+
+      {showClaim && (
+        <div
+          className="mb-8 rounded-2xl border border-primary/30 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+          style={{ background: "var(--gradient-primary)" }}
+        >
+          <div className="flex items-start gap-3 text-primary-foreground">
+            <Shield className="h-6 w-6 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold">Claim admin access</p>
+              <p className="text-sm opacity-90">
+                No admin exists yet. As the first user, you can claim the admin role
+                to manage jobs and view analytics.
+              </p>
+            </div>
+          </div>
+          <Button
+            onClick={handleClaim}
+            disabled={claiming}
+            className="bg-white text-primary hover:bg-white/90 shrink-0"
+          >
+            {claiming && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Make me admin
+          </Button>
+        </div>
+      )}
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-10">
         {tiles.map((t) => (
