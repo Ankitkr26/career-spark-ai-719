@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/lib/auth";
-import { adminExists, claimFirstAdmin } from "@/utils/admin.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
@@ -40,22 +40,24 @@ function Dashboard() {
       setShowClaim(false);
       return;
     }
-    adminExists().then((res) => setShowClaim(!res.exists));
+    supabase.rpc("admin_exists").then(({ data }) => setShowClaim(!data));
   }, [isAdmin]);
 
   const handleClaim = async () => {
     setClaiming(true);
-    const res = await claimFirstAdmin();
+    const { data, error } = await supabase.rpc("claim_first_admin");
     setClaiming(false);
-    if (res.claimed) {
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (data) {
       toast.success("You're now an admin!");
       await refreshRoles();
       setShowClaim(false);
-    } else if (res.reason === "admin_exists") {
+    } else {
       toast.info("An admin already exists.");
       setShowClaim(false);
-    } else {
-      toast.error("Couldn't claim admin role.");
     }
   };
 
