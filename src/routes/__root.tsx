@@ -1,4 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/lib/auth";
+import { AppHeader } from "@/components/AppHeader";
 
 import appCss from "../styles.css?url";
 
@@ -65,5 +68,15 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
-  return <Outlet />;
+  return (
+    <AuthProvider>
+      <div className="min-h-screen flex flex-col bg-background">
+        <AppHeader />
+        <main className="flex-1">
+          <Outlet />
+        </main>
+      </div>
+      <Toaster richColors position="top-right" />
+    </AuthProvider>
+  );
 }
