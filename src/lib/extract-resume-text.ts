@@ -20,12 +20,21 @@ export async function extractResumeText(file: File): Promise<string> {
 }
 
 async function extractPdf(file: File): Promise<string> {
-  const pdfjs = await import("pdfjs-dist");
+  const pdfjs = (await import("pdfjs-dist")) as unknown as {
+    GlobalWorkerOptions: { workerSrc: string };
+    getDocument: (opts: { data: ArrayBuffer }) => {
+      promise: Promise<{
+        numPages: number;
+        getPage: (n: number) => Promise<{
+          getTextContent: () => Promise<{ items: unknown[] }>;
+        }>;
+      }>;
+    };
+  };
   // Use the bundled worker as a URL string.
   const workerSrc = (
     await import("pdfjs-dist/build/pdf.worker.min.mjs?url")
   ).default;
-  // @ts-expect-error - GlobalWorkerOptions type is loose
   pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
 
   const buf = await file.arrayBuffer();
@@ -47,9 +56,14 @@ async function extractPdf(file: File): Promise<string> {
 }
 
 async function extractDocx(file: File): Promise<string> {
-  const mammoth = await import("mammoth/mammoth.browser");
+  const mammoth = (await import(
+    /* @vite-ignore */ "mammoth/mammoth.browser.js"
+  )) as {
+    extractRawText: (input: {
+      arrayBuffer: ArrayBuffer;
+    }) => Promise<{ value: string }>;
+  };
   const buf = await file.arrayBuffer();
-  // @ts-expect-error - browser build types
   const result = await mammoth.extractRawText({ arrayBuffer: buf });
-  return (result.value as string).trim();
+  return result.value.trim();
 }
