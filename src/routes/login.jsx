@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/login")({
     head: () => ({
@@ -26,7 +25,7 @@ const signUpSchema = signInSchema.extend({
     displayName: z.string().trim().min(1, "Name required").max(100),
 });
 function LoginPage() {
-    const { isAuthenticated, loading } = useAuth();
+    const { isAuthenticated, loading, signIn, signUp } = useAuth();
     const navigate = useNavigate();
     const [submitting, setSubmitting] = useState(false);
     useEffect(() => {
@@ -45,23 +44,17 @@ function LoginPage() {
             return;
         }
         setSubmitting(true);
-        let error;
         try {
-            const result = await supabase.auth.signInWithPassword(parsed.data);
-            error = result.error;
+            await signIn(parsed.data);
+            toast.success("Welcome back!");
+            navigate({ to: "/dashboard" });
         }
-        catch (_err) {
+        catch (err) {
+            toast.error(err instanceof Error ? err.message : "Could not sign in. Check your credentials.");
+        }
+        finally {
             setSubmitting(false);
-            toast.error("Could not connect to auth server. Check your Supabase URL and internet.");
-            return;
         }
-        setSubmitting(false);
-        if (error) {
-            toast.error(error.message);
-            return;
-        }
-        toast.success("Welcome back!");
-        navigate({ to: "/dashboard" });
     };
     const handleSignUp = async (e) => {
         e.preventDefault();
@@ -76,30 +69,17 @@ function LoginPage() {
             return;
         }
         setSubmitting(true);
-        let error;
         try {
-            const result = await supabase.auth.signUp({
-                email: parsed.data.email,
-                password: parsed.data.password,
-                options: {
-                    emailRedirectTo: `${window.location.origin}/dashboard`,
-                    data: { display_name: parsed.data.displayName },
-                },
-            });
-            error = result.error;
+            await signUp(parsed.data);
+            toast.success("Account created! You're signed in.");
+            navigate({ to: "/dashboard" });
         }
-        catch (_err) {
+        catch (err) {
+            toast.error(err instanceof Error ? err.message : "Could not create account. Try again.");
+        }
+        finally {
             setSubmitting(false);
-            toast.error("Could not connect to auth server. Check your Supabase URL and internet.");
-            return;
         }
-        setSubmitting(false);
-        if (error) {
-            toast.error(error.message);
-            return;
-        }
-        toast.success("Account created! You're signed in.");
-        navigate({ to: "/dashboard" });
     };
     return (<div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">

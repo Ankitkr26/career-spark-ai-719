@@ -1,3 +1,40 @@
 from django.contrib import admin
+from .models import (
+    RecruiterProfile,
+    Resume,
+    Skill,
+    Project,
+    Certification,
+    PlacementAnalytics,
+    LearningRoadmap,
+    Job,
+    JobApplication,
+    MockInterview,
+    InterviewQuestion,
+    CodingProblem,
+    CodingSubmission,
+    Notification,
+    ChatbotConversation,
+    PlatformAnalytics,
+    CompanyExperience,
+    Leaderboard,
+)
 
-# Register your models here.
+admin.site.register(RecruiterProfile)
+admin.site.register(Resume)
+admin.site.register(Skill)
+admin.site.register(Project)
+admin.site.register(Certification)
+admin.site.register(PlacementAnalytics)
+admin.site.register(LearningRoadmap)
+admin.site.register(Job)
+admin.site.register(JobApplication)
+admin.site.register(MockInterview)
+admin.site.register(InterviewQuestion)
+admin.site.register(CodingProblem)
+admin.site.register(CodingSubmission)
+admin.site.register(Notification)
+admin.site.register(ChatbotConversation)
+admin.site.register(PlatformAnalytics)
+admin.site.register(CompanyExperience)
+admin.site.register(Leaderboard)
