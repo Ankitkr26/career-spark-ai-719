@@ -1,153 +1,142 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Shield, ShieldOff, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, } from "@/components/ui/table";
-import { supabase } from "@/integrations/supabase/client";
+import { Loader2, User, Check, X, UserCheck } from "lucide-react";
 import { useAuth } from "@/lib/auth";
-export function UsersTab() {
-    const { user: me } = useAuth();
-    const [rows, setRows] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const load = async () => {
-        setLoading(true);
-        const [profR, rolesR, resumesR] = await Promise.all([
-            supabase
-                .from("profiles")
-                .select("id, display_name, headline, created_at")
-                .order("created_at", { ascending: false }),
-            supabase.from("user_roles").select("user_id, role"),
-            supabase.from("resumes").select("user_id, ats_score"),
-        ]);
-        if (profR.error)
-            toast.error(profR.error.message);
-        const rolesByUser = new Map();
-        (rolesR.data ?? []).forEach((r) => {
-            const arr = rolesByUser.get(r.user_id) ?? [];
-            arr.push(r.role);
-            rolesByUser.set(r.user_id, arr);
-        });
-        const resumeStats = new Map();
-        (resumesR.data ?? []).forEach((r) => {
-            const cur = resumeStats.get(r.user_id) ?? { count: 0, best: null };
-            cur.count += 1;
-            if (typeof r.ats_score === "number") {
-                cur.best = cur.best === null ? r.ats_score : Math.max(cur.best, r.ats_score);
-            }
-            resumeStats.set(r.user_id, cur);
-        });
-        const enriched = (profR.data ?? []).map((p) => ({
-            id: p.id,
-            display_name: p.display_name,
-            headline: p.headline,
-            created_at: p.created_at,
-            roles: rolesByUser.get(p.id) ?? [],
-            resume_count: resumeStats.get(p.id)?.count ?? 0,
-            best_score: resumeStats.get(p.id)?.best ?? null,
-        }));
-        setRows(enriched);
-        setLoading(false);
-    };
-    useEffect(() => {
-        load();
-    }, []);
-    const toggleAdmin = async (row) => {
-        const isAdmin = row.roles.includes("admin");
-        if (isAdmin) {
-            const { error } = await supabase
-                .from("user_roles")
-                .delete()
-                .eq("user_id", row.id)
-                .eq("role", "admin");
-            if (error)
-                return toast.error(error.message);
-            toast.success("Admin role revoked");
-        }
-        else {
-            const { error } = await supabase
-                .from("user_roles")
-                .insert({ user_id: row.id, role: "admin" });
-            if (error)
-                return toast.error(error.message);
-            toast.success("Admin role granted");
-        }
-        load();
-    };
-    if (loading) {
-        return (<div className="flex items-center justify-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground"/>
-      </div>);
-    }
-    return (<div>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold">Users</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          {rows.length} registered {rows.length === 1 ? "user" : "users"}
-        </p>
-      </div>
 
-      <div className="rounded-xl border border-border overflow-hidden" style={{ background: "var(--card)" }}>
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
+
+export function UsersTab() {
+  const { session } = useAuth();
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/users/`, {
+        headers: session?.access_token ? { Authorization: `Token ${session.access_token}` } : undefined,
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => res.statusText);
+        throw new Error(t || res.statusText);
+      }
+      const data = await res.json();
+      setUsers(data ?? []);
+    }
+    catch (e) {
+      // If admin endpoints are not implemented, show helpful message
+      setUsers([]);
+      toast.error(e instanceof Error ? e.message : "Failed to load users");
+    }
+    finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!query) return users;
+    const q = query.toLowerCase();
+    return users.filter((u) => `${u.email || u.username || ""} ${u.first_name || ""} ${u.last_name || ""}`.toLowerCase().includes(q));
+  }, [users, query]);
+
+  const doPatch = async (u, payload) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/users/${u.id}/`, {
+        method: "PATCH",
+        headers: {
+          Authorization: session?.access_token ? `Token ${session.access_token}` : "",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
+      toast.success("Updated");
+      await load();
+    }
+    catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update user");
+    }
+  };
+
+  const toggleBlock = async (u) => {
+    if (!confirm(`${u.email || u.username} will be ${u.is_blocked ? 'unblocked' : 'blocked'}. Continue?`)) return;
+    await doPatch(u, { is_blocked: !u.is_blocked });
+  };
+
+  const toggleVerify = async (u) => {
+    await doPatch(u, { is_verified: !u.is_verified });
+  };
+
+  const setRole = async (u, role) => {
+    await doPatch(u, { role });
+  };
+
+  return (<div>
+    <div className="flex items-center justify-between mb-6">
+      <div>
+        <h2 className="text-xl font-semibold">Users</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">Manage platform users: verify accounts, block suspicious users, and assign roles.</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Input placeholder="Search by email or name" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <Button onClick={load}>Refresh</Button>
+      </div>
+    </div>
+
+    {loading ? (<div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground"/>
+      </div>) : filtered.length === 0 ? (<div className="rounded-2xl border border-border border-dashed p-12 text-center" style={{ background: "var(--gradient-card)" }}>
+        <User className="h-8 w-8 text-muted-foreground mx-auto mb-3"/>
+        <p className="font-medium">No users found</p>
+        <p className="text-sm text-muted-foreground mt-1">If admin endpoints are not available, implement `/api/admin/users/` on the backend.</p>
+      </div>) : (<div className="rounded-xl border border-border overflow-hidden" style={{ background: "var(--card)" }}>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Roles</TableHead>
-              <TableHead>Resumes</TableHead>
-              <TableHead>Best ATS</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead className="text-right">Action</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Verified</TableHead>
+              <TableHead>Blocked</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((u) => {
-            const isAdmin = u.roles.includes("admin");
-            const isMe = u.id === me?.id;
-            return (<TableRow key={u.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center">
-                        <User className="h-4 w-4 text-muted-foreground"/>
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">
-                          {u.display_name || "Unnamed"}
-                          {isMe && (<span className="ml-2 text-xs text-muted-foreground">(you)</span>)}
-                        </p>
-                        {u.headline && (<p className="text-xs text-muted-foreground">{u.headline}</p>)}
-                      </div>
+            {filtered.map((u) => (<TableRow key={u.id}>
+                <TableCell className="font-medium">{u.email ?? u.username}</TableCell>
+                <TableCell>{(u.first_name || "") + (u.last_name ? ` ${u.last_name}` : "")}</TableCell>
+                <TableCell>{u.role ?? "student"}</TableCell>
+                <TableCell>{u.is_verified ? (<Badge className="bg-accent/15 text-accent-foreground">Verified</Badge>) : (<Badge variant="outline">Unverified</Badge>)}</TableCell>
+                <TableCell>{u.is_blocked ? (<Badge className="bg-destructive/10 text-destructive">Blocked</Badge>) : (<Badge variant="outline">Active</Badge>)}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button size="sm" variant="ghost" onClick={() => toggleVerify(u)}>
+                      {u.is_verified ? <UserCheck className="h-4 w-4 mr-2"/> : <Check className="h-4 w-4 mr-2"/>}
+                      {u.is_verified ? "Unverify" : "Verify"}
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => toggleBlock(u)}>
+                      <X className="h-4 w-4 mr-2"/>
+                      {u.is_blocked ? "Unblock" : "Block"}
+                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button size="sm" onClick={() => setRole(u, 'recruiter')}>Make recruiter</Button>
+                      <Button size="sm" onClick={() => setRole(u, 'admin')}>Make admin</Button>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      {u.roles.length === 0 && (<Badge variant="outline" className="text-xs">none</Badge>)}
-                      {u.roles.map((r) => (<Badge key={r} className={r === "admin"
-                        ? "bg-primary/15 text-primary border-0"
-                        : "bg-secondary text-secondary-foreground border-0"}>
-                          {r}
-                        </Badge>))}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">{u.resume_count}</TableCell>
-                  <TableCell className="text-sm">
-                    {u.best_score !== null ? (<span className="font-medium">{u.best_score}</span>) : (<span className="text-muted-foreground">—</span>)}
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {new Date(u.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {isMe ? (<span className="text-xs text-muted-foreground">—</span>) : (<Button variant="ghost" size="sm" onClick={() => toggleAdmin(u)}>
-                        {isAdmin ? (<>
-                            <ShieldOff className="h-4 w-4 mr-1.5"/> Revoke admin
-                          </>) : (<>
-                            <Shield className="h-4 w-4 mr-1.5"/> Make admin
-                          </>)}
-                      </Button>)}
-                  </TableCell>
-                </TableRow>);
-        })}
+                  </div>
+                </TableCell>
+              </TableRow>))}
           </TableBody>
         </Table>
-      </div>
-    </div>);
+      </div>)}
+
+  </div>);
 }

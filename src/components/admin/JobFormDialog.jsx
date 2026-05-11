@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 const schema = z.object({
     title: z.string().trim().min(2).max(120),
     company: z.string().trim().min(1).max(120),
@@ -25,7 +25,7 @@ const schema = z.object({
 const JOB_TYPES = ["Full-time", "Part-time", "Internship", "Contract"];
 const EXPERIENCE = ["Entry", "Mid", "Senior", "Lead"];
 export function JobFormDialog({ open, onOpenChange, job, onSaved, }) {
-    const { user } = useAuth();
+  const { user, session } = useAuth();
     const isEdit = !!job;
     const [submitting, setSubmitting] = useState(false);
     const [form, setForm] = useState({
@@ -90,17 +90,42 @@ export function JobFormDialog({ open, onOpenChange, job, onSaved, }) {
             salary_range: parsed.data.salary_range || null,
             is_active: parsed.data.is_active,
         };
-        const { error } = isEdit
-            ? await supabase.from("jobs").update(payload).eq("id", job.id)
-            : await supabase.from("jobs").insert({ ...payload, created_by: user?.id });
-        setSubmitting(false);
-        if (error) {
-            toast.error(error.message);
-            return;
+        try {
+          let res;
+          if (isEdit) {
+          res = await fetch(`${API_BASE}/api/jobs/${job.id}/`, {
+            method: "PATCH",
+            headers: {
+              Authorization: session ? `Token ${session.access_token}` : "",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
         }
-        toast.success(isEdit ? "Job updated" : "Job created");
-        onSaved();
-        onOpenChange(false);
+        else {
+          res = await fetch(`${API_BASE}/api/jobs/`, {
+            method: "POST",
+            headers: {
+              Authorization: session ? `Token ${session.access_token}` : "",
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+        }
+          setSubmitting(false);
+          if (!res.ok) {
+            const t = await res.text().catch(() => res.statusText);
+            toast.error(t || "Failed to save job");
+            return;
+          }
+          toast.success(isEdit ? "Job updated" : "Job created");
+          onSaved();
+          onOpenChange(false);
+        }
+        catch (err) {
+          setSubmitting(false);
+          toast.error(err instanceof Error ? err.message : "Failed to save job");
+        }
     };
     return (<Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

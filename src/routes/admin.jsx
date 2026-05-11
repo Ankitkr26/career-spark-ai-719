@@ -5,6 +5,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { JobsTab } from "@/components/admin/JobsTab";
 import { AnalyticsTab } from "@/components/admin/AnalyticsTab";
 import { UsersTab } from "@/components/admin/UsersTab";
+import { RolesTab } from "@/components/admin/RolesTab";
 export const Route = createFileRoute("/admin")({
     head: () => ({
         meta: [
@@ -38,6 +39,7 @@ function AdminPage() {
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="jobs">Jobs</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="roles">Roles</TabsTrigger>
         </TabsList>
         <TabsContent value="analytics">
           <AnalyticsTab />
@@ -48,6 +50,9 @@ function AdminPage() {
         <TabsContent value="users">
           <UsersTab />
         </TabsContent>
+          <TabsContent value="roles">
+            <RolesTab />
+          </TabsContent>
       </Tabs>
     </div>);
 }

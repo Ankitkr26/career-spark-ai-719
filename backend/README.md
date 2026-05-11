@@ -46,4 +46,4 @@ It provides authentication endpoints, resume management, and job management.
 - `DELETE /api/jobs/{id}/` (admin only)
 
 ## Notes
-- The frontend currently uses a Supabase integration. To use this new backend, update auth and data management requests to point at `http://127.0.0.1:8000/api/`.
+- The frontend communicates with this Django backend for auth and data management at `http://127.0.0.1:8000/api/`.

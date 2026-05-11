@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { FileText, Upload, Loader2, Sparkles, Trash2, Gauge, CheckCircle2, AlertCircle, } from "lucide-react";
 import { RequireAuth } from "@/components/RequireAuth";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000";
 import { extractResumeText } from "@/lib/extract-resume-text";
 import { analyzeResume } from "@/utils/resume-analysis.functions";
 import { Button } from "@/components/ui/button";
@@ -32,15 +32,27 @@ function ResumesPage() {
     const [dragOver, setDragOver] = useState(false);
     const inputRef = useRef(null);
     const refresh = useCallback(async () => {
-        const { data, error } = await supabase
-            .from("resumes")
-            .select("id,user_id,file_name,file_path,status,ats_score,summary,skills,missing_skills,suggestions,experience,education,created_at")
-            .order("created_at", { ascending: false });
-        if (error)
-            toast.error(error.message);
-        setResumes((data ?? []));
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE}/api/resumes/`, {
+          headers: session?.access_token
+            ? { Authorization: `Token ${session.access_token}` }
+            : undefined,
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => res.statusText);
+          throw new Error(t || res.statusText);
+        }
+        const data = await res.json();
+        setResumes(data ?? []);
+      }
+      catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to load resumes");
+      }
+      finally {
         setLoading(false);
-    }, []);
+      }
+    }, [session]);
     useEffect(() => {
         refresh();
     }, [refresh]);
@@ -61,37 +73,46 @@ function ResumesPage() {
             }
             // 2) Upload original to storage
             const path = `${user.id}/${Date.now()}-${file.name.replace(/\s+/g, "_")}`;
-            const { error: upErr } = await supabase.storage
-                .from("resumes")
-                .upload(path, file, { upsert: false });
-            if (upErr)
-                throw new Error(upErr.message);
-            // 3) Insert resume row
-            const { data: row, error: insErr } = await supabase
-                .from("resumes")
-                .insert({
-                user_id: user.id,
+            // 2) Upload original to backend storage
+            const form = new FormData();
+            form.append("file", file);
+            const upRes = await fetch(`${API_BASE}/api/uploads/resumes/`, {
+              method: "POST",
+              headers: session?.access_token ? { Authorization: `Token ${session.access_token}` } : undefined,
+              body: form,
+            });
+            if (!upRes.ok) {
+              const t = await upRes.text().catch(() => upRes.statusText);
+              throw new Error(t || "Upload failed");
+            }
+            const uploaded = await upRes.json();
+            const pathReturned = uploaded.file_path;
+            // 3) Insert resume row via backend
+            const createRes = await fetch(`${API_BASE}/api/resumes/`, {
+              method: "POST",
+              headers: {
+                Authorization: session?.access_token ? `Token ${session.access_token}` : "",
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
                 file_name: file.name,
-                file_path: path,
+                file_path: pathReturned,
                 raw_text: rawText.slice(0, 60000),
                 status: "analyzing",
-            })
-                .select()
-                .single();
-            if (insErr)
-                throw new Error(insErr.message);
+              }),
+            });
+            if (!createRes.ok) {
+              const t = await createRes.text().catch(() => createRes.statusText);
+              throw new Error(t || "Failed to create resume");
+            }
+            const row = await createRes.json();
             toast.success("Uploaded — running AI analysis…");
             setAnalyzingId(row.id);
             await refresh();
             // 4) Trigger AI analysis
             try {
-                await analyzeResume({
-                    data: { resumeId: row.id, rawText: rawText.slice(0, 60000) },
-                    headers: session?.access_token
-                        ? { Authorization: `Bearer ${session.access_token}` }
-                        : undefined,
-                });
-                toast.success("Analysis complete");
+              await analyzeResume({ data: { resumeId: row.id, rawText: rawText.slice(0, 60000), token: session?.access_token } });
+              toast.success("Analysis complete");
             }
             catch (e) {
                 toast.error(e instanceof Error ? e.message : "Analysis failed");
@@ -111,43 +132,41 @@ function ResumesPage() {
         }
     };
     const reanalyze = async (r) => {
-        if (!session?.access_token)
-            return;
-        setAnalyzingId(r.id);
-        try {
-            // Pull stored raw_text
-            const { data: row, error } = await supabase
-                .from("resumes")
-                .select("raw_text")
-                .eq("id", r.id)
-                .single();
-            if (error || !row?.raw_text)
-                throw new Error("No text stored for this resume");
-            await analyzeResume({
-                data: { resumeId: r.id, rawText: row.raw_text.slice(0, 60000) },
-                headers: { Authorization: `Bearer ${session.access_token}` },
-            });
-            toast.success("Re-analyzed");
-            await refresh();
-        }
-        catch (e) {
-            toast.error(e instanceof Error ? e.message : "Failed");
-        }
-        finally {
-            setAnalyzingId(null);
-        }
+      if (!session?.access_token)
+        return;
+      setAnalyzingId(r.id);
+      try {
+        const res = await fetch(`${API_BASE}/api/resumes/${r.id}/`, {
+          headers: { Authorization: `Token ${session.access_token}` },
+        });
+        if (!res.ok) throw new Error("No text stored for this resume");
+        const row = await res.json();
+        if (!row?.raw_text) throw new Error("No text stored for this resume");
+        await analyzeResume({ data: { resumeId: r.id, rawText: row.raw_text.slice(0, 60000), token: session.access_token } });
+        toast.success("Re-analyzed");
+        await refresh();
+      }
+      catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed");
+      }
+      finally {
+        setAnalyzingId(null);
+      }
     };
     const remove = async (r) => {
-        if (!confirm(`Delete "${r.file_name}"?`))
-            return;
-        await supabase.storage.from("resumes").remove([r.file_path]);
-        const { error } = await supabase.from("resumes").delete().eq("id", r.id);
-        if (error) {
-            toast.error(error.message);
-            return;
-        }
-        toast.success("Deleted");
-        refresh();
+      if (!confirm(`Delete "${r.file_name}"?`))
+        return;
+      const res = await fetch(`${API_BASE}/api/resumes/${r.id}/`, {
+        method: "DELETE",
+        headers: { Authorization: `Token ${session?.access_token}` },
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => res.statusText);
+        toast.error(t || "Failed to delete");
+        return;
+      }
+      toast.success("Deleted");
+      refresh();
     };
     return (<div className="mx-auto max-w-5xl px-4 py-10 space-y-8">
       <div>

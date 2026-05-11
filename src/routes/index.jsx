@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Brain, FileText, Sparkles, Target, TrendingUp, MessageSquareText, ArrowRight, CheckCircle2, } from "lucide-react";
+import { Brain, FileText, Sparkles, Target, TrendingUp, MessageSquareText, ArrowRight, CheckCircle2, BookOpen, Edit3, Gauge, Code, } from "lucide-react";
 import { Button } from "@/components/ui/button";
 export const Route = createFileRoute("/")({
     head: () => ({
@@ -19,26 +19,46 @@ export const Route = createFileRoute("/")({
     component: Landing,
 });
 const features = [
-    {
-        icon: FileText,
-        title: "Smart Resume Analyzer",
-        desc: "Upload PDF or DOCX. Our AI extracts skills, scores ATS readiness, and pinpoints gaps.",
-    },
-    {
-        icon: Target,
-        title: "Personalized Job Matching",
-        desc: "Get a per-job match score and the exact skills you're missing for each role.",
-    },
-    {
-        icon: TrendingUp,
-        title: "Placement Intelligence",
-        desc: "Track readiness, see trending skills, and benchmark yourself against the market.",
-    },
-    {
-        icon: MessageSquareText,
-        title: "AI Mock Interviews",
-        desc: "Role-specific questions, instant feedback, and an overall interview score.",
-    },
+  {
+    icon: FileText,
+    title: "Smart Resume Analyzer",
+    desc: "Upload PDF/DOCX. AI extracts skills, scores ATS readiness and pinpoints gaps.",
+  },
+  {
+    icon: Edit3,
+    title: "Resume Builder",
+    desc: "Drag-and-drop builder to craft role-focused resumes and export PDFs.",
+  },
+  {
+    icon: BookOpen,
+    title: "Resume Templates",
+    desc: "Professional templates for different industries and role levels.",
+  },
+  {
+    icon: Gauge,
+    title: "ATS Scoring Dashboard",
+    desc: "Visualize ATS score trends and distribution across your uploads.",
+  },
+  {
+    icon: Brain,
+    title: "AI Career Assistant",
+    desc: "Get tailored roadmaps, role suggestions and cover letters from AI.",
+  },
+  {
+    icon: MessageSquareText,
+    title: "Mock Interviews",
+    desc: "Role-specific practice with instant AI feedback and scoring.",
+  },
+  {
+    icon: Code,
+    title: "Coding Practice & Contests",
+    desc: "Solve problems, run tests and compete in timed contests.",
+  },
+  {
+    icon: Target,
+    title: "Personalized Job Matching",
+    desc: "Per-role match scores with exact skills to improve for each role.",
+  },
 ];
 function Landing() {
     return (<>

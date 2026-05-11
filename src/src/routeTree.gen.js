@@ -9,17 +9,87 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './../routes/__root'
+import { Route as TermsRouteImport } from './../routes/terms'
+import { Route as SettingsRouteImport } from './../routes/settings'
 import { Route as ResumesRouteImport } from './../routes/resumes'
+import { Route as ProfileRouteImport } from './../routes/profile'
+import { Route as PrivacyRouteImport } from './../routes/privacy'
+import { Route as PricingRouteImport } from './../routes/pricing'
+import { Route as NotificationsRouteImport } from './../routes/notifications'
 import { Route as LoginRouteImport } from './../routes/login'
 import { Route as JobsRouteImport } from './../routes/jobs'
 import { Route as InterviewRouteImport } from './../routes/interview'
+import { Route as HelpRouteImport } from './../routes/help'
+import { Route as FeaturesRouteImport } from './../routes/features'
+import { Route as FaqRouteImport } from './../routes/faq'
 import { Route as DashboardRouteImport } from './../routes/dashboard'
+import { Route as ContactRouteImport } from './../routes/contact'
+import { Route as CompanyRouteImport } from './../routes/company'
+import { Route as AtsRouteImport } from './../routes/ats'
 import { Route as AdminRouteImport } from './../routes/admin'
+import { Route as AboutRouteImport } from './../routes/about'
 import { Route as IndexRouteImport } from './../routes/index'
+import { Route as TrackersPlacementRouteImport } from './../routes/trackers/placement'
+import { Route as SupportTicketRouteImport } from './../routes/support/ticket'
+import { Route as ResumesTemplatesRouteImport } from './../routes/resumes/templates'
+import { Route as ResumesReportsRouteImport } from './../routes/resumes/reports'
+import { Route as ResumesBuilderRouteImport } from './../routes/resumes/builder'
+import { Route as LearnSystemDesignRouteImport } from './../routes/learn/system-design'
+import { Route as LearnMcqRouteImport } from './../routes/learn/mcq'
+import { Route as LearnLeaderboardRouteImport } from './../routes/learn/leaderboard'
+import { Route as LearnDashboardRouteImport } from './../routes/learn/dashboard'
+import { Route as LearnContestsRouteImport } from './../routes/learn/contests'
+import { Route as LearnCodingRouteImport } from './../routes/learn/coding'
+import { Route as LearnAptitudeRouteImport } from './../routes/learn/aptitude'
+import { Route as JobsSavedRouteImport } from './../routes/jobs/saved'
+import { Route as JobsInternshipsRouteImport } from './../routes/jobs/internships'
+import { Route as JobsAppliedRouteImport } from './../routes/jobs/applied'
+import { Route as InterviewsTechnicalRouteImport } from './../routes/interviews/technical'
+import { Route as InterviewsHrRouteImport } from './../routes/interviews/hr'
+import { Route as InterviewsFeedbackRouteImport } from './../routes/interviews/feedback'
+import { Route as AuthVerifyRouteImport } from './../routes/auth/verify'
+import { Route as AuthResetRouteImport } from './../routes/auth/reset'
+import { Route as AuthForgotRouteImport } from './../routes/auth/forgot'
+import { Route as AiSkillGapRouteImport } from './../routes/ai/skill-gap'
+import { Route as AiRoadmapRouteImport } from './../routes/ai/roadmap'
+import { Route as AiChatRouteImport } from './../routes/ai/chat'
+import { Route as AiCareerRouteImport } from './../routes/ai/career'
+import { Route as LearnRoadmapsWebRouteImport } from './../routes/learn/roadmaps/web'
+import { Route as LearnRoadmapsDsaRouteImport } from './../routes/learn/roadmaps/dsa'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+})
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+})
 const ResumesRoute = ResumesRouteImport.update({
   id: '/resumes',
   path: '/resumes',
+  getParentRoute: () => rootRouteImport,
+})
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+})
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+})
+const PricingRoute = PricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+})
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => rootRouteImport,
 })
 const LoginRoute = LoginRouteImport.update({
@@ -37,9 +107,39 @@ const InterviewRoute = InterviewRouteImport.update({
   path: '/interview',
   getParentRoute: () => rootRouteImport,
 })
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+})
+const FeaturesRoute = FeaturesRouteImport.update({
+  id: '/features',
+  path: '/features',
+  getParentRoute: () => rootRouteImport,
+})
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+})
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+})
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+})
+const CompanyRoute = CompanyRouteImport.update({
+  id: '/company',
+  path: '/company',
+  getParentRoute: () => rootRouteImport,
+})
+const AtsRoute = AtsRouteImport.update({
+  id: '/ats',
+  path: '/ats',
   getParentRoute: () => rootRouteImport,
 })
 const AdminRoute = AdminRouteImport.update({
@@ -47,20 +147,211 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 })
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+})
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 })
+const TrackersPlacementRoute = TrackersPlacementRouteImport.update({
+  id: '/trackers/placement',
+  path: '/trackers/placement',
+  getParentRoute: () => rootRouteImport,
+})
+const SupportTicketRoute = SupportTicketRouteImport.update({
+  id: '/support/ticket',
+  path: '/support/ticket',
+  getParentRoute: () => rootRouteImport,
+})
+const ResumesTemplatesRoute = ResumesTemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => ResumesRoute,
+})
+const ResumesReportsRoute = ResumesReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => ResumesRoute,
+})
+const ResumesBuilderRoute = ResumesBuilderRouteImport.update({
+  id: '/builder',
+  path: '/builder',
+  getParentRoute: () => ResumesRoute,
+})
+const LearnSystemDesignRoute = LearnSystemDesignRouteImport.update({
+  id: '/learn/system-design',
+  path: '/learn/system-design',
+  getParentRoute: () => rootRouteImport,
+})
+const LearnMcqRoute = LearnMcqRouteImport.update({
+  id: '/learn/mcq',
+  path: '/learn/mcq',
+  getParentRoute: () => rootRouteImport,
+})
+const LearnLeaderboardRoute = LearnLeaderboardRouteImport.update({
+  id: '/learn/leaderboard',
+  path: '/learn/leaderboard',
+  getParentRoute: () => rootRouteImport,
+})
+const LearnDashboardRoute = LearnDashboardRouteImport.update({
+  id: '/learn/dashboard',
+  path: '/learn/dashboard',
+  getParentRoute: () => rootRouteImport,
+})
+const LearnContestsRoute = LearnContestsRouteImport.update({
+  id: '/learn/contests',
+  path: '/learn/contests',
+  getParentRoute: () => rootRouteImport,
+})
+const LearnCodingRoute = LearnCodingRouteImport.update({
+  id: '/learn/coding',
+  path: '/learn/coding',
+  getParentRoute: () => rootRouteImport,
+})
+const LearnAptitudeRoute = LearnAptitudeRouteImport.update({
+  id: '/learn/aptitude',
+  path: '/learn/aptitude',
+  getParentRoute: () => rootRouteImport,
+})
+const JobsSavedRoute = JobsSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => JobsRoute,
+})
+const JobsInternshipsRoute = JobsInternshipsRouteImport.update({
+  id: '/internships',
+  path: '/internships',
+  getParentRoute: () => JobsRoute,
+})
+const JobsAppliedRoute = JobsAppliedRouteImport.update({
+  id: '/applied',
+  path: '/applied',
+  getParentRoute: () => JobsRoute,
+})
+const InterviewsTechnicalRoute = InterviewsTechnicalRouteImport.update({
+  id: '/interviews/technical',
+  path: '/interviews/technical',
+  getParentRoute: () => rootRouteImport,
+})
+const InterviewsHrRoute = InterviewsHrRouteImport.update({
+  id: '/interviews/hr',
+  path: '/interviews/hr',
+  getParentRoute: () => rootRouteImport,
+})
+const InterviewsFeedbackRoute = InterviewsFeedbackRouteImport.update({
+  id: '/interviews/feedback',
+  path: '/interviews/feedback',
+  getParentRoute: () => rootRouteImport,
+})
+const AuthVerifyRoute = AuthVerifyRouteImport.update({
+  id: '/auth/verify',
+  path: '/auth/verify',
+  getParentRoute: () => rootRouteImport,
+})
+const AuthResetRoute = AuthResetRouteImport.update({
+  id: '/auth/reset',
+  path: '/auth/reset',
+  getParentRoute: () => rootRouteImport,
+})
+const AuthForgotRoute = AuthForgotRouteImport.update({
+  id: '/auth/forgot',
+  path: '/auth/forgot',
+  getParentRoute: () => rootRouteImport,
+})
+const AiSkillGapRoute = AiSkillGapRouteImport.update({
+  id: '/ai/skill-gap',
+  path: '/ai/skill-gap',
+  getParentRoute: () => rootRouteImport,
+})
+const AiRoadmapRoute = AiRoadmapRouteImport.update({
+  id: '/ai/roadmap',
+  path: '/ai/roadmap',
+  getParentRoute: () => rootRouteImport,
+})
+const AiChatRoute = AiChatRouteImport.update({
+  id: '/ai/chat',
+  path: '/ai/chat',
+  getParentRoute: () => rootRouteImport,
+})
+const AiCareerRoute = AiCareerRouteImport.update({
+  id: '/ai/career',
+  path: '/ai/career',
+  getParentRoute: () => rootRouteImport,
+})
+const LearnRoadmapsWebRoute = LearnRoadmapsWebRouteImport.update({
+  id: '/learn/roadmaps/web',
+  path: '/learn/roadmaps/web',
+  getParentRoute: () => rootRouteImport,
+})
+const LearnRoadmapsDsaRoute = LearnRoadmapsDsaRouteImport.update({
+  id: '/learn/roadmaps/dsa',
+  path: '/learn/roadmaps/dsa',
+  getParentRoute: () => rootRouteImport,
+})
+
+const JobsRouteChildren = {
+  JobsAppliedRoute: JobsAppliedRoute,
+  JobsInternshipsRoute: JobsInternshipsRoute,
+  JobsSavedRoute: JobsSavedRoute,
+}
+
+const JobsRouteWithChildren = JobsRoute._addFileChildren(JobsRouteChildren)
+
+const ResumesRouteChildren = {
+  ResumesBuilderRoute: ResumesBuilderRoute,
+  ResumesReportsRoute: ResumesReportsRoute,
+  ResumesTemplatesRoute: ResumesTemplatesRoute,
+}
+
+const ResumesRouteWithChildren =
+  ResumesRoute._addFileChildren(ResumesRouteChildren)
 
 const rootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
   AdminRoute: AdminRoute,
+  AtsRoute: AtsRoute,
+  CompanyRoute: CompanyRoute,
+  ContactRoute: ContactRoute,
   DashboardRoute: DashboardRoute,
+  FaqRoute: FaqRoute,
+  FeaturesRoute: FeaturesRoute,
+  HelpRoute: HelpRoute,
   InterviewRoute: InterviewRoute,
-  JobsRoute: JobsRoute,
+  JobsRoute: JobsRouteWithChildren,
   LoginRoute: LoginRoute,
-  ResumesRoute: ResumesRoute,
+  NotificationsRoute: NotificationsRoute,
+  PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
+  ProfileRoute: ProfileRoute,
+  ResumesRoute: ResumesRouteWithChildren,
+  SettingsRoute: SettingsRoute,
+  TermsRoute: TermsRoute,
+  AiCareerRoute: AiCareerRoute,
+  AiChatRoute: AiChatRoute,
+  AiRoadmapRoute: AiRoadmapRoute,
+  AiSkillGapRoute: AiSkillGapRoute,
+  AuthForgotRoute: AuthForgotRoute,
+  AuthResetRoute: AuthResetRoute,
+  AuthVerifyRoute: AuthVerifyRoute,
+  InterviewsFeedbackRoute: InterviewsFeedbackRoute,
+  InterviewsHrRoute: InterviewsHrRoute,
+  InterviewsTechnicalRoute: InterviewsTechnicalRoute,
+  LearnAptitudeRoute: LearnAptitudeRoute,
+  LearnCodingRoute: LearnCodingRoute,
+  LearnContestsRoute: LearnContestsRoute,
+  LearnDashboardRoute: LearnDashboardRoute,
+  LearnLeaderboardRoute: LearnLeaderboardRoute,
+  LearnMcqRoute: LearnMcqRoute,
+  LearnSystemDesignRoute: LearnSystemDesignRoute,
+  SupportTicketRoute: SupportTicketRoute,
+  TrackersPlacementRoute: TrackersPlacementRoute,
+  LearnRoadmapsDsaRoute: LearnRoadmapsDsaRoute,
+  LearnRoadmapsWebRoute: LearnRoadmapsWebRoute,
 }
 export const routeTree = rootRouteImport._addFileChildren(rootRouteChildren)
 

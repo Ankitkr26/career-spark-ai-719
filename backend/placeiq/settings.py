@@ -120,8 +120,8 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Vite dev server
     "http://127.0.0.1:5173",
-    "http://localhost:8083",
-    "http://127.0.0.1:8083",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
 ]
 
 
@@ -141,3 +141,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+# Media files (user uploaded)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

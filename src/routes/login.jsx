@@ -18,8 +18,8 @@ export const Route = createFileRoute("/login")({
     component: LoginPage,
 });
 const signInSchema = z.object({
-    email: z.string().trim().email("Invalid email").max(255),
-    password: z.string().min(6, "Password must be at least 6 characters").max(72),
+  email: z.string().trim().email("Invalid email").max(255),
+  password: z.string().min(8, "Password must be at least 8 characters").max(72),
 });
 const signUpSchema = signInSchema.extend({
     displayName: z.string().trim().min(1, "Name required").max(100),
@@ -130,7 +130,7 @@ function LoginPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Password</Label>
-                  <Input id="signup-password" name="password" type="password" required minLength={6}/>
+                  <Input id="signup-password" name="password" type="password" required minLength={8}/>
                 </div>
                 <Button type="submit" className="w-full" disabled={submitting}>
                   {submitting && <Loader2 className="h-4 w-4 mr-2 animate-spin"/>}

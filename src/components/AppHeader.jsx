@@ -10,20 +10,25 @@ export function AppHeader() {
     const { location } = useRouterState();
     const [open, setOpen] = useState(false);
     const navItems = isAuthenticated
-        ? [
-            { to: "/dashboard", label: "Dashboard" },
-            { to: "/resumes", label: "Resumes" },
-            { to: "/jobs", label: "Jobs" },
-            { to: "/interview", label: "Mock Interview" },
-            ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
-        ]
-        : [
-            { to: "/", label: "Home" },
-            { href: "/#features", label: "Features" },
-            { to: "/jobs", label: "Jobs" },
-            { href: "/#get-started", label: "Get Started" },
-            { to: "/login", label: "Sign in" },
-        ];
+      ? [
+        { to: "/dashboard", label: "Dashboard" },
+        { to: "/resumes", label: "Resume Analyzer" },
+        { to: "/ai/career", label: "AI Assistant" },
+        { to: "/interview", label: "Mock Interview" },
+        { to: "/learn/dashboard", label: "Learning" },
+        { to: "/jobs", label: "Jobs" },
+        ...(isAdmin ? [{ to: "/admin", label: "Admin" }] : []),
+      ]
+      : [
+        { to: "/", label: "Home" },
+        { to: "/features", label: "Features" },
+        { to: "/resumes", label: "Resume Analyzer" },
+        { to: "/ai/career", label: "AI Assistant" },
+        { to: "/interview", label: "Mock Interview" },
+        { to: "/learn/dashboard", label: "Learn" },
+        { to: "/jobs", label: "Jobs" },
+        { to: "/login", label: "Sign in" },
+      ];
     return (<header className="sticky top-0 z-40 border-b border-border/60 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex items-center gap-2 group">

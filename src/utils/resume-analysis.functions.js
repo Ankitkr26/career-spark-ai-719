@@ -1,9 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const InputSchema = z.object({
-    resumeId: z.string().uuid(),
+    resumeId: z.string().min(1),
     rawText: z.string().min(20).max(60000),
+    token: z.string().optional(),
 });
 const AnalysisSchema = z.object({
     ats_score: z.number().int().min(0).max(100),
@@ -28,170 +28,45 @@ const AnalysisSchema = z.object({
         .max(15),
 });
 export const analyzeResume = createServerFn({ method: "POST" })
-    .middleware([requireSupabaseAuth])
     .inputValidator((input) => InputSchema.parse(input))
-    .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    // Confirm the resume belongs to the caller (RLS also enforces this)
-    const { data: existing, error: fetchErr } = await supabase
-        .from("resumes")
-        .select("id,user_id")
-        .eq("id", data.resumeId)
-        .maybeSingle();
-    if (fetchErr)
-        throw new Error(fetchErr.message);
-    if (!existing || existing.user_id !== userId) {
-        throw new Error("Resume not found");
+    .handler(async ({ data }) => {
+    // Backend API base (Django)
+    const API_BASE = process.env.VITE_API_BASE_URL || process.env.API_BASE || "http://127.0.0.1:8000";
+    const token = data.token;
+    if (!token) {
+        throw new Error("Unauthorized: no token provided");
     }
-    await supabase
-        .from("resumes")
-        .update({ status: "analyzing", raw_text: data.rawText })
-        .eq("id", data.resumeId);
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey)
-        throw new Error("LOVABLE_API_KEY not configured");
-    const systemPrompt = `You are an expert ATS (Applicant Tracking System) and senior technical recruiter.
-Analyze the candidate's resume and produce a strict JSON analysis using the provided tool.
-- ats_score: 0-100. Penalize missing contact info, no quantified impact, weak action verbs, walls of text, no skills section, irrelevant content.
-- skills: concrete technologies, tools, frameworks, languages and methodologies the candidate clearly demonstrates.
-- missing_skills: high-demand skills the resume should include for stronger market positioning (think: cloud, testing, system design, data, leadership for senior roles).
-- suggestions: specific, actionable improvements (rewriting bullets with metrics, restructuring sections, ATS keyword fixes, formatting).
-- experience and education: extract structured entries.
-Be concise and concrete.`;
-    const tool = {
-        type: "function",
-        function: {
-            name: "submit_resume_analysis",
-            description: "Submit the structured ATS analysis of the resume.",
-            parameters: {
-                type: "object",
-                properties: {
-                    ats_score: { type: "integer", minimum: 0, maximum: 100 },
-                    summary: { type: "string" },
-                    skills: { type: "array", items: { type: "string" } },
-                    missing_skills: { type: "array", items: { type: "string" } },
-                    suggestions: { type: "array", items: { type: "string" } },
-                    experience: {
-                        type: "array",
-                        items: {
-                            type: "object",
-                            properties: {
-                                title: { type: "string" },
-                                company: { type: "string" },
-                                duration: { type: "string" },
-                                highlights: { type: "array", items: { type: "string" } },
-                            },
-                            required: ["title", "company"],
-                            additionalProperties: false,
-                        },
-                    },
-                    education: {
-                        type: "array",
-                        items: {
-                            type: "object",
-                            properties: {
-                                degree: { type: "string" },
-                                institution: { type: "string" },
-                                year: { type: "string" },
-                            },
-                            required: ["degree", "institution"],
-                            additionalProperties: false,
-                        },
-                    },
-                },
-                required: [
-                    "ats_score",
-                    "summary",
-                    "skills",
-                    "missing_skills",
-                    "suggestions",
-                    "experience",
-                    "education",
-                ],
-                additionalProperties: false,
-            },
-        },
-    };
+
+    // Delegate analysis to the Django backend which holds the GEMINI key.
+    // The backend will update resume status and persist analysis.
     let resp;
     try {
-        resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        resp = await fetch(`${API_BASE}/api/resumes/${data.resumeId}/analyze/`, {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${apiKey}`,
+                Authorization: `Token ${token}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                model: "google/gemini-3-flash-preview",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    {
-                        role: "user",
-                        content: `Analyze this resume:\n\n${data.rawText}`,
-                    },
-                ],
-                tools: [tool],
-                tool_choice: {
-                    type: "function",
-                    function: { name: "submit_resume_analysis" },
-                },
-            }),
+            body: JSON.stringify({ raw_text: data.rawText.slice(0, 60000) }),
         });
     }
     catch (e) {
-        await supabase
-            .from("resumes")
-            .update({ status: "failed" })
-            .eq("id", data.resumeId);
-        throw new Error("AI gateway unreachable");
+        // network error
+        throw new Error("AI analysis request failed");
     }
+
     if (!resp.ok) {
-        await supabase
-            .from("resumes")
-            .update({ status: "failed" })
-            .eq("id", data.resumeId);
+        const t = await resp.text().catch(() => resp.statusText);
         if (resp.status === 429)
             throw new Error("Rate limit exceeded. Please try again shortly.");
         if (resp.status === 402)
             throw new Error("AI credits exhausted. Add credits in Settings → Workspace → Usage.");
-        const t = await resp.text().catch(() => "");
-        console.error("AI gateway error", resp.status, t);
-        throw new Error("AI analysis failed");
+        throw new Error(t || "AI analysis failed");
     }
-    const payload = (await resp.json());
-    const args = payload.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    if (!args) {
-        await supabase
-            .from("resumes")
-            .update({ status: "failed" })
-            .eq("id", data.resumeId);
-        throw new Error("AI returned no analysis");
-    }
-    let parsed;
-    try {
-        parsed = AnalysisSchema.parse(JSON.parse(args));
-    }
-    catch (e) {
-        console.error("Analysis parse failed", e);
-        await supabase
-            .from("resumes")
-            .update({ status: "failed" })
-            .eq("id", data.resumeId);
-        throw new Error("AI analysis was malformed");
-    }
-    const { error: updErr } = await supabase
-        .from("resumes")
-        .update({
-        status: "analyzed",
-        ats_score: parsed.ats_score,
-        summary: parsed.summary,
-        skills: parsed.skills,
-        missing_skills: parsed.missing_skills,
-        suggestions: parsed.suggestions,
-        experience: parsed.experience,
-        education: parsed.education,
-    })
-        .eq("id", data.resumeId);
-    if (updErr)
-        throw new Error(updErr.message);
+
+    const payload = await resp.json();
+    // backend returns { ok: true, analysis: { ... } }
+    const parsed = AnalysisSchema.parse(payload.analysis);
+
     return { ok: true, analysis: parsed };
 });
